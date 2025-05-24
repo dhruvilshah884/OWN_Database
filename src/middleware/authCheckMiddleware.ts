@@ -1,27 +1,23 @@
-import jwt from "jsonwebtoken";
-import { NextResponse, NextRequest } from "next/server";
+import { verify } from "jsonwebtoken";
+import { NextApiRequest, NextApiResponse } from "next";
+import { models } from "@/models";
 
-export const authCheckMiddleware = async (req: NextRequest) => {
+export const authCheckMiddleware = async (
+  req: NextApiRequest & { user: any },
+  res: NextApiResponse,
+  next: any
+) => {
   try {
-    const token = req.headers.get("authorization")?.split(" ")[1];
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Unauthorized",
-        },
-        { status: 401 }
-      );
-    }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    return decoded;
-  } catch (error) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 }
-    );
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) throw new Error("Token not provided");
+    const decodedToken = verify(token, process.env.SECRET_KEY as string) as any;
+    const user = await models.User.findById(decodedToken._id);
+    if (!user) throw new Error("User not found");
+    req.user = {
+      ...user.toObject(),
+    };
+    next();
+  } catch (error: any) {
+    res.status(401).json({ message: error.message || "Unauthorized" });
   }
 };

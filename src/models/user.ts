@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now() + 5 * 60 * 1000,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true, versionKey: false }
 );
